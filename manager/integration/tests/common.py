@@ -3205,6 +3205,9 @@ def activate_standby_volume(client, volume_name,
 
 def check_volume_last_backup(client, volume_name, last_backup):
     for i in range(RETRY_COUNTS):
+        # use this api to update field `last backup`
+        client.list_backupVolume()
+
         volume = client.by_id_volume(volume_name)
         if volume.lastBackup == last_backup:
             break
