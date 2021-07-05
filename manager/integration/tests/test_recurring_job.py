@@ -35,6 +35,8 @@ from kubernetes.client.rest import ApiException
 import backupstore
 from backupstore import set_random_backupstore, backupstore_s3  # NOQA
 
+import longhorn
+
 RECURRING_JOB_LABEL = "RecurringJob"
 RECURRING_JOB_NAME = "backup"
 MAX_BACKUP_STATUS_SIZE = 5
@@ -561,12 +563,15 @@ def test_recurring_jobs_for_detached_volume(set_random_backupstore, client, core
         }
     ]
     vol.recurringUpdate(jobs=jobs)
+    time.sleep(60)
     common.wait_for_backup_completion(client, vol.name)
-    for _ in range(4):
-        bv = client.by_id_backupVolume(vol.name)
-        backups = bv.backupList().data
-        assert len(backups) == 1
-        time.sleep(30)
+    for _ in range(RETRY_BACKUP_COUNTS):
+        try:
+            bv = client.by_id_backupVolume(vol.name)
+            backups = bv.backupList().data
+            assert len(backups) == 1
+        except (longhorn.ApiError):
+            time.sleep(RETRY_BACKUP_INTERVAL)
 
     vol.recurringUpdate(jobs=[])
 
