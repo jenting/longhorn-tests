@@ -1055,19 +1055,19 @@ def test_backup_metadata_deletion(set_random_backupstore, client, core_api, volu
     9.  verify backup list contains no error messages for volume(1,2)
     10. verify backup list contains backup(1,2) information for volume(1,2)
     11. verify backup list backup(1) of volume(1) contains error message
-    12.  delete backup(1) of volume(1,2)
-    10. request a backup list
-    11. verify backup list contains no error messages for volume(1,2)
-    12. verify backup list only contains backup(2) information for volume(1,2)
-    13. delete volume.cfg of volume(2)
-    14. request backup volume deletion for volume(2)
-    15. verify that volume(2) has been deleted in the backupstore.
-    16. request a backup list
-    17. verify backup list only contains volume(1) and no errors
-    18. verify backup list only contains backup(2) information for volume(1)
-    19. delete backup volume(1)
-    20. verify that volume(1) has been deleted in the backupstore.
-    21. cleanup
+    12. delete backup(1) of volume(1,2)
+    13. request a backup list
+    14. verify backup list contains no error messages for volume(1,2)
+    15. verify backup list only contains backup(2) information for volume(1,2)
+    16. delete volume.cfg of volume(2)
+    17. request backup volume deletion for volume(2)
+    18. verify that volume(2) has been deleted in the backupstore.
+    19. request a backup list
+    20. verify backup list only contains volume(1) and no errors
+    21. verify backup list only contains backup(2) information for volume(1)
+    22. delete backup volume(1)
+    23. verify that volume(1) has been deleted in the backupstore.
+    24. cleanup
     """
     backupstore_cleanup(client)
 
@@ -1090,12 +1090,25 @@ def test_backup_metadata_deletion(set_random_backupstore, client, core_api, volu
     _, v1b2, _, _ = create_backup(client, volume1_name)
     _, v2b2, _, _ = create_backup(client, volume2_name)
 
-    bvs = client.list_backupVolume()
+    for i in range(RETRY_COUNTS):
+        found1 = found2 = found3 = found4 = False
 
-    for bv in bvs:
-        backups = bv.backupList()
-        for b in backups:
-            assert b.messages is None
+        bvs = client.list_backupVolume()
+        for bv in bvs:
+            backups = bv.backupList()
+            for b in backups:
+                if b.name == v1b1.name and b.url == v1b1.url:
+                    found1 = True
+                elif b.name == v1b2.name and b.url == v1b2.url:
+                    found2 = True
+                elif b.name == v2b1.name and b.url == v2b1.url:
+                    found3 = True
+                elif b.name == v2b2.name and b.url == v2b2.url:
+                    found4 = True
+        if found1 & found2 & found3 & found4:
+            break
+        time.sleep(RETRY_INTERVAL)
+    assert found1 & found2 & found3 & found4
 
     v1b1_new = v1bv.backupGet(name=v1b1.name)
     assert_backup_state(v1b1, v1b1_new)
@@ -1114,16 +1127,25 @@ def test_backup_metadata_deletion(set_random_backupstore, client, core_api, volu
                                         volume1_name,
                                         v1b1.name)
 
-    bvs = client.list_backupVolume()
+    for i in range(RETRY_COUNTS):
+        found1 = found2 = found3 = found4 = False
 
-    for bv in bvs:
-        if bv.name == volume1_name:
+        bvs = client.list_backupVolume()
+        for bv in bvs:
             backups = bv.backupList()
             for b in backups:
-                if b.name == v1b1.name:
-                    assert b.messages is not None
-                else:
-                    assert b.messages is None
+                if b.name == v1b1.name and b.url == v1b1.url:
+                    found1 = True
+                elif b.name == v1b2.name and b.url == v1b2.url:
+                    found2 = True
+                elif b.name == v2b1.name and b.url == v2b1.url:
+                    found3 = True
+                elif b.name == v2b2.name and b.url == v2b2.url:
+                    found4 = True
+        if (not found1) & found2 & found3 & found4:
+            break
+        time.sleep(RETRY_INTERVAL)
+    assert (not found1) & found2 & found3 & found4
 
     v1b2_new = v1bv.backupGet(name=v1b2.name)
     assert_backup_state(v1b2, v1b2_new)
@@ -1137,12 +1159,25 @@ def test_backup_metadata_deletion(set_random_backupstore, client, core_api, volu
     delete_backup(client, volume1_name, v1b1.name)
     delete_backup(client, volume2_name, v2b1.name)
 
-    bvs = client.list_backupVolume()
+    for i in range(RETRY_COUNTS):
+        found1 = found2 = found3 = found4 = False
 
-    for bv in bvs:
-        backups = bv.backupList()
-        for b in backups:
-            assert b.messages is None
+        bvs = client.list_backupVolume()
+        for bv in bvs:
+            backups = bv.backupList()
+            for b in backups:
+                if b.name == v1b1.name and b.url == v1b1.url:
+                    found1 = True
+                elif b.name == v1b2.name and b.url == v1b2.url:
+                    found2 = True
+                elif b.name == v2b1.name and b.url == v2b1.url:
+                    found3 = True
+                elif b.name == v2b2.name and b.url == v2b2.url:
+                    found4 = True
+        if (not found1) & found2 & (not found3) & found4:
+            break
+        time.sleep(RETRY_INTERVAL)
+    assert (not found1) & found2 & (not found3) & found4
 
     assert len(v1bv.backupList()) == 1
     assert len(v2bv.backupList()) == 1
@@ -1155,25 +1190,69 @@ def test_backup_metadata_deletion(set_random_backupstore, client, core_api, volu
     assert len(v2bv.backupList()) == 0
 
     delete_backup_volume(client, v2bv.name)
+    for i in range(RETRY_COUNTS):
+        if backupstore_count_backup_block_files(client,
+                                                core_api,
+                                                volume2_name) == 0:
+            break
+        time.sleep(RETRY_INTERVAL)
     assert backupstore_count_backup_block_files(client,
                                                 core_api,
                                                 volume2_name) == 0
 
-    bvs = client.list_backupVolume()
-    for bv in bvs:
-        if bv.name == volume1_name:
+    for i in range(RETRY_COUNTS):
+        bvs = client.list_backupVolume()
+
+        found1 = found2 = found3 = found4 = False
+        for bv in bvs:
             backups = bv.backupList()
             for b in backups:
-                assert b.messages is None
+                if b.name == v1b1.name and b.url == v1b1.url:
+                    found1 = True
+                elif b.name == v1b2.name and b.url == v1b2.url:
+                    found2 = True
+                elif b.name == v2b1.name and b.url == v2b1.url:
+                    found3 = True
+                elif b.name == v2b2.name and b.url == v2b2.url:
+                    found4 = True
+        if (not found1) & found2 & (not found3) & (not found4):
+            break
+        time.sleep(RETRY_INTERVAL)
+    assert (not found1) & found2 & (not found3) & (not found4)
 
     v1b2_new = v1bv.backupGet(name=v1b2.name)
     assert_backup_state(v1b2, v1b2_new)
     assert v1b2_new.messages == v1b2.messages is None
 
     delete_backup(client, volume1_name, v1b2.name)
+    for i in range(RETRY_COUNTS):
+        if backupstore_count_backup_block_files(client,
+                                                core_api,
+                                                volume1_name) == 0:
+            break
     assert backupstore_count_backup_block_files(client,
                                                 core_api,
                                                 volume1_name) == 0
+
+    for i in range(RETRY_COUNTS):
+        found1 = found2 = found3 = found4 = False
+
+        bvs = client.list_backupVolume()
+        for bv in bvs:
+            backups = bv.backupList()
+            for b in backups:
+                if b.name == v1b1.name and b.url == v1b1.url:
+                    found1 = True
+                elif b.name == v1b2.name and b.url == v1b2.url:
+                    found2 = True
+                elif b.name == v2b1.name and b.url == v2b1.url:
+                    found3 = True
+                elif b.name == v2b2.name and b.url == v2b2.url:
+                    found4 = True
+        if (not found1) & (not found2) & (not found3) & (not found4):
+            break
+        time.sleep(RETRY_INTERVAL)
+    assert (not found1) & (not found2) & (not found3) & (not found4)
 
 
 @pytest.mark.coretest   # NOQA
