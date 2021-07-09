@@ -373,11 +373,9 @@ def test_csi_volumesnapshot_basic(set_random_backupstore, # NOQA
     Setup:
 
     1. Make sure your cluster contains the below crds
-    https://github.com/kubernetes-csi/external-snapshotter
-    /tree/master/client/config/crd
+    https://github.com/kubernetes-csi/external-snapshotter/tree/release-4.0/client/config/crd
     2. Make sure your cluster contains the snapshot controller
-    https://github.com/kubernetes-csi/external-snapshotter
-    /tree/master/deploy/kubernetes/snapshot-controller
+    https://github.com/kubernetes-csi/external-snapshotter/tree/release-4.0/deploy/kubernetes/snapshot-controller
 
     Steps:
 
@@ -510,11 +508,9 @@ def test_csi_volumesnapshot_restore_existing_backup(set_random_backupstore, # NO
     Setup:
 
     1. Make sure your cluster contains the below crds
-    https://github.com/kubernetes-csi/external-snapshotter
-    /tree/master/client/config/crd
+    https://github.com/kubernetes-csi/external-snapshotter/tree/release-4.0/client/config/crd
     2. Make sure your cluster contains the snapshot controller
-    https://github.com/kubernetes-csi/external-snapshotter
-    /tree/master/deploy/kubernetes/snapshot-controller
+    https://github.com/kubernetes-csi/external-snapshotter/tree/release-4.0/deploy/kubernetes/snapshot-controller
 
     Steps:
 
