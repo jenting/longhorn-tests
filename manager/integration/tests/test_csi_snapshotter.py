@@ -477,6 +477,7 @@ def test_csi_volumesnapshot_basic(set_random_backupstore, # NOQA
     delete_volumesnapshot(csivolsnap["metadata"]["name"], "default")
 
     if backup_is_deleted is False:
+        wait_for_backup_completion(client, volume_name, b["snapshotName"])
         find_backup(client, volume_name, b["snapshotName"])
     else:
         wait_for_backup_delete(client, volume_name, b["name"])
